@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartTracker AI — Expense Tracker</title>
+  <meta name="description" content="AI-powered Smart Expense Tracker with budgets, bills, analytics and AI chat."/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ══════════ TOAST ══════════ -->
+<div id="toast-container"></div>
+
+<!-- ══════════ OVERLAY ══════════ -->
+<div id="overlay" onclick="ST.closeSidebar()"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--                LOGIN PAGE                 -->
+<!-- ══════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="login-wrapper">
+    <div class="login-logo">
+      <div class="login-icon shimmer">💰</div>
+      <h1>SmartTracker AI</h1>
+      <p>Your intelligent finance companion</p>
+    </div>
+    <div class="login-card glass">
+      <div class="tab-row" id="login-tabs">
+        <button class="tab-btn active" data-tab="login" onclick="ST.setTab('login')">Sign In</button>
+        <button class="tab-btn" data-tab="signup" onclick="ST.setTab('signup')">Sign Up</button>
+      </div>
+      <div id="signup-name-row" style="display:none">
+        <input class="login-input" id="inp-name" placeholder="Full Name" autocomplete="name"/>
+      </div>
+      <input class="login-input" id="inp-email" type="email" placeholder="Email address" value="vsuja@email.com" autocomplete="email"/>
+      <div class="pw-row">
+        <input class="login-input" id="inp-pw" type="password" placeholder="Password (any value works)" autocomplete="current-password"/>
+        <button class="pw-toggle" onclick="ST.togglePw()" title="Show/hide password">👁️</button>
+      </div>
+      <button class="login-btn" id="login-btn" onclick="ST.doLogin()">
+        <span id="login-btn-label">Sign In →</span>
+        <div id="login-spinner" class="spinner" style="display:none"></div>
+      </button>
+      <div class="or-divider"><span>or continue with</span></div>
+      <div class="social-row">
+        <button class="social-btn" onclick="ST.doLogin()">🔵 Google</button>
+        <button class="social-btn" onclick="ST.doLogin()">⬛ Apple</button>
+        <button class="social-btn" onclick="ST.doLogin()">🔷 GitHub</button>
+      </div>
+      <p class="login-footer">🔒 Bank-grade encryption · Your data is safe</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--                  MAIN APP                 -->
+<!-- ══════════════════════════════════════════ -->
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon shimmer">💰</div>
+      <div>
+        <div class="brand-name">SmartTracker</div>
+        <div class="brand-tag">AI-Powered ⭐</div>
+      </div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-pill" onclick="ST.navigate('settings')">
+        <div class="user-ava" id="user-ava">VS</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name-text">Vsuja</div>
+          <div class="user-plan">Premium ✨</div>
+        </div>
+        <button class="logout-btn" onclick="event.stopPropagation();ST.doLogout()" title="Logout">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div id="main-wrap">
+    <!-- HEADER -->
+    <header id="top-bar">
+      <button class="hamburger" onclick="ST.openSidebar()">☰</button>
+      <div id="page-heading">
+        <h1 id="page-title">Dashboard</h1>
+        <p id="page-date"></p>
+      </div>
+      <div class="header-actions">
+        <button class="hdr-btn green" onclick="ST.exportCSV()">📤 CSV</button>
+        <button class="hdr-btn ghost" onclick="ST.toast('PDF report generated!','success','📄')">📄 PDF</button>
+        <button class="hdr-btn ghost desktop-only" onclick="ST.toast('Monthly report sent to email!','success','📊')">📊 Report</button>
+        <button class="hdr-btn primary" onclick="ST.openModal()">＋ Add</button>
+        <button class="hdr-btn ghost icon-btn" id="dark-btn" onclick="ST.toggleDark()" title="Toggle dark mode">🌙</button>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main id="page-content"></main>
+  </div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav id="mobile-nav"></nav>
+</div>
+
+<!-- ══════════ ADD TRANSACTION MODAL ══════════ -->
+<div id="modal-overlay" onclick="ST.closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-drag-handle"></div>
+    <div class="modal-head">
+      <h2 class="modal-title">New Transaction</h2>
+      <button class="modal-close" onclick="ST.closeModal()">✕</button>
+    </div>
+    <div class="type-toggle">
+      <button id="btn-income"  class="type-btn income  active" onclick="ST.setType('income')">＋ Income</button>
+      <button id="btn-expense" class="type-btn expense"        onclick="ST.setType('expense')">－ Expense</button>
+    </div>
+    <div class="form-stack">
+      <select  id="m-cat" class="form-control"></select>
+      <input   id="m-desc" class="form-control" placeholder="Description (e.g. Zomato Order)"/>
+      <div class="prefix-wrap"><span class="prefix">₹</span><input id="m-amt" class="form-control" type="number" min="1" placeholder="Amount"/></div>
+      <input   id="m-note" class="form-control" placeholder="Note (optional)"/>
+      <label class="check-row"><input type="checkbox" id="m-upi" class="check-inp"/> Tag as UPI Transaction 📱</label>
+      <button class="submit-btn" onclick="ST.submitModal()">Add Transaction ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ADD GOAL MODAL ══════════ -->
+<div id="goal-modal-overlay" onclick="ST.closeGoalModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-drag-handle"></div>
+    <div class="modal-head">
+      <h2 class="modal-title">New Savings Goal</h2>
+      <button class="modal-close" onclick="ST.closeGoalModal()">✕</button>
+    </div>
+    <div class="form-stack">
+      <input id="g-name"     class="form-control" placeholder="Goal name (e.g. Europe Trip)"/>
+      <div class="prefix-wrap"><span class="prefix">₹</span><input id="g-target" class="form-control" type="number" min="100" placeholder="Target amount"/></div>
+      <input id="g-deadline" class="form-control" placeholder="Deadline (e.g. Dec 2027)"/>
+      <div class="color-row" id="goal-colors"></div>
+      <button class="submit-btn" onclick="ST.submitGoal()">Create Goal 🎯</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCRIPTS ══════════ -->
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

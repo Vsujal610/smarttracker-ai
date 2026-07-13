@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>SmartTracker AI</title>
+  <meta name="description" content="AI-Powered Smart Expense Tracker"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<div id="toast-wrap"></div>
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div id="login-page">
+  <div class="lb lb1"></div><div class="lb lb2"></div>
+  <div class="lw">
+    <div class="ll">
+      <div class="li shimmer">💰</div>
+      <h1>SmartTracker AI</h1>
+      <p>Your intelligent finance companion</p>
+    </div>
+    <div class="lc glass">
+      <div class="ltabs">
+        <button class="ltab active" id="lt-in"  onclick="setTab('login')">Sign In</button>
+        <button class="ltab"        id="lt-up"  onclick="setTab('signup')">Sign Up</button>
+      </div>
+      <div id="snrow" style="display:none"><input class="li2" id="sn" placeholder="Full Name"/></div>
+      <input class="li2" id="em" type="email" value="vsuja@email.com" placeholder="Email"/>
+      <div class="pwr">
+        <input class="li2" id="pw" type="password" placeholder="Password (any value in demo)"/>
+        <button class="pet" onclick="togglePw()">👁️</button>
+      </div>
+      <button class="lbtn" id="lbtn" onclick="doLogin()">
+        <span id="lbl">Sign In →</span>
+        <div class="spin" id="lspin" style="display:none"></div>
+      </button>
+      <div class="lor"><span>or</span></div>
+      <div class="socrow">
+        <button class="soc" onclick="doLogin()">🔵 Google</button>
+        <button class="soc" onclick="doLogin()">⬛ Apple</button>
+        <button class="soc" onclick="doLogin()">🔷 GitHub</button>
+      </div>
+      <p class="lfooter">🔒 Secured with JWT Authentication</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app" style="display:none">
+  <aside id="sidebar">
+    <div class="sbrand">
+      <div class="sbicon shimmer">💰</div>
+      <div><div class="sbn">SmartTracker</div><div class="sbsub">AI-Powered ⭐</div></div>
+    </div>
+    <nav id="snav"></nav>
+    <div class="sfooter">
+      <div class="spill" onclick="goPage('settings')">
+        <div class="sava" id="sava">VS</div>
+        <div class="suinfo"><div class="sun" id="sun">Vsuja</div><div class="suplan">Premium ✨</div></div>
+        <button class="slout" onclick="event.stopPropagation();doLogout()" title="Logout">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="mwrap">
+    <header id="topbar">
+      <button class="ham" onclick="openSidebar()">☰</button>
+      <div id="ph"><h1 id="ptitle">Dashboard</h1><p id="pdate"></p></div>
+      <div class="hacts">
+        <button class="hb green" onclick="exportCSV()">📤 CSV</button>
+        <button class="hb ghost" onclick="toast('PDF generated!','success','📄')">📄 PDF</button>
+        <button class="hb ghost hd" onclick="toast('Report sent!','success','📊')">📊 Report</button>
+        <button class="hb primary" onclick="openModal()">＋ Add</button>
+        <button class="hb ghost" id="dkbtn" onclick="toggleDark()">🌙</button>
+      </div>
+    </header>
+    <main id="content"></main>
+  </div>
+
+  <nav id="mobnav"></nav>
+</div>
+
+<!-- ════════════════ ADD MODAL ════════════════ -->
+<div id="modal" onclick="closeModal()">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mhead"><h2 class="mtitle">New Transaction</h2><button class="mclose" onclick="closeModal()">✕</button></div>
+    <div class="ttog">
+      <button id="ti" class="tbtn income active" onclick="setType('income')">＋ Income</button>
+      <button id="te" class="tbtn expense"       onclick="setType('expense')">－ Expense</button>
+    </div>
+    <div class="fstack">
+      <select id="mcat" class="fc"></select>
+      <input  id="mdes" class="fc" placeholder="Description"/>
+      <div class="prw"><span class="pr">₹</span><input id="mamt" class="fc" type="number" min="1" placeholder="Amount"/></div>
+      <input  id="mnot" class="fc" placeholder="Note (optional)"/>
+      <label class="crow"><input type="checkbox" id="mupi" class="ci"/> Tag as UPI 📱</label>
+      <button class="sbtn" id="modal-submit" onclick="submitModal()">Add Transaction ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ GOAL MODAL ════════════════ -->
+<div id="gmodal" onclick="closeGoalModal()">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mhead"><h2 class="mtitle">New Savings Goal</h2><button class="mclose" onclick="closeGoalModal()">✕</button></div>
+    <div class="fstack">
+      <input id="gname"   class="fc" placeholder="Goal name (e.g. Europe Trip)"/>
+      <div class="prw"><span class="pr">₹</span><input id="gtarget" class="fc" type="number" min="100" placeholder="Target amount"/></div>
+      <input id="gdl"     class="fc" placeholder="Deadline (e.g. Dec 2027)"/>
+      <div class="colorrow" id="gcols"></div>
+      <button class="sbtn" onclick="submitGoal()">Create Goal 🎯</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
