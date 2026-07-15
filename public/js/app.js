@@ -402,7 +402,20 @@ async function renderPage() {
     el.innerHTML = `<div class="page">${html}</div>`;
     afterRender(currentPage);
   } catch(e) {
-    el.innerHTML = `<div class="page"><div class="card"><p style="color:var(--ros)">Failed to load. Is the server running?</p></div></div>`;
+    // If session error → already handled by api() → shows login
+    // If other error → show retry button instead of scary message
+    if (document.getElementById('login-page').style.display !== 'flex') {
+      el.innerHTML = `<div class="page">
+        <div class="card" style="text-align:center;padding:40px">
+          <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+          <div style="font-size:16px;font-weight:800;color:var(--txt);margin-bottom:8px">Session Expired</div>
+          <div style="font-size:13px;color:var(--txt2);margin-bottom:24px">Your session has expired. Please sign in again.</div>
+          <button onclick="forceLogout()" style="padding:12px 28px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--ind),var(--pur));color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(99,102,241,.35)">
+            🔐 Sign In Again
+          </button>
+        </div>
+      </div>`;
+    }
   }
 }
 
