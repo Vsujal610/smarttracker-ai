@@ -5,9 +5,12 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const { v4: uuidv4 } = require('uuid');
+const jwt     = require('jsonwebtoken');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+// JWT secret — in production use a long random string stored in env variable
+const JWT_SECRET = process.env.JWT_SECRET || 'smarttracker-ai-super-secret-key-2026';
 
 app.use(cors());
 app.use(express.json());
@@ -67,7 +70,7 @@ let db = {
 // Simple session tokens (use JWT in production)
 const sessions = {};
 
-// ── AUTH: Login (real password check)
+// ── AUTH: Login (JWT — survives server restarts!)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -75,32 +78,44 @@ app.post('/api/auth/login', (req, res) => {
   const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
   if (!user)
     return res.status(401).json({ error: 'No account found with this email.' });
-  // Real password check (case-sensitive)
   if (user.password !== password)
     return res.status(401).json({ error: 'Incorrect password. Please try again.' });
-  const token = uuidv4();
-  sessions[token] = user.id;
+  // Sign JWT — valid for 30 days, survives server restarts
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
 });
 
 // ── AUTH: Register
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password } = req.body;
-  if (db.users.find(u => u.email === email))
-    return res.status(400).json({ error: 'Email already exists' });
+  if (db.users.find(u => u.email.toLowerCase() === email.toLowerCase()))
+    return res.status(400).json({ error: 'Email already exists.' });
   const user = { id: uuidv4(), name, email, password, plan: 'Free' };
   db.users.push(user);
-  const token = uuidv4();
-  sessions[token] = user.id;
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
 });
 
-// ── Middleware: Auth check
+// ── Middleware: verify JWT
 function auth(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token || !sessions[token]) return res.status(401).json({ error: 'Unauthorized' });
-  req.userId = sessions[token];
-  next();
+  const header = req.headers.authorization || '';
+  const token  = header.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized — no token' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch(e) {
+    return res.status(401).json({ error: 'Session expired — please login again.' });
+  }
 }
 
 // ── TRANSACTIONS
