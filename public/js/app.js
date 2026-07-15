@@ -158,24 +158,63 @@ function togglePw() {
 }
 async function doLogin() {
   const email = document.getElementById('em').value.trim();
-  const password = document.getElementById('pw').value || 'demo';
+  const password = document.getElementById('pw').value;
   const name  = document.getElementById('sn')?.value.trim() || email.split('@')[0];
   const spin = document.getElementById('lspin');
   const lbl  = document.getElementById('lbl');
-  spin.style.display = 'block'; lbl.textContent = 'Please wait...';
+  const errEl = document.getElementById('login-err');
+
+  // Clear previous error
+  if (errEl) errEl.remove();
+
+  // Validate fields
+  if (!email) { showLoginError('Please enter your email address.'); return; }
+  if (!password) { showLoginError('Please enter your password.'); return; }
+
+  spin.style.display = 'block';
+  lbl.textContent = 'Please wait...';
+
   try {
     const endpoint = loginMode === 'login' ? '/api/auth/login' : '/api/auth/register';
     const body = loginMode === 'login' ? { email, password } : { name, email, password };
-    const data = await api('POST', endpoint, body);
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      spin.style.display = 'none';
+      lbl.textContent = loginMode === 'login' ? 'Sign In →' : 'Create Account →';
+      showLoginError(data.error || 'Login failed. Please try again.');
+      // Shake animation on error
+      document.querySelector('.lc').style.animation = 'shake .4s ease';
+      setTimeout(() => document.querySelector('.lc').style.animation = '', 500);
+      return;
+    }
     token = data.token;
     currentUser = data.user;
     localStorage.setItem('st_token', token);
     localStorage.setItem('st_user', JSON.stringify(currentUser));
-    initApp();
+    // Success animation
+    lbl.textContent = '✓ Welcome, ' + data.user.name + '!';
+    spin.style.display = 'none';
+    setTimeout(() => initApp(), 600);
   } catch(e) {
     spin.style.display = 'none';
     lbl.textContent = loginMode === 'login' ? 'Sign In →' : 'Create Account →';
+    showLoginError('Connection error. Is the server running?');
   }
+}
+
+function showLoginError(msg) {
+  const existing = document.getElementById('login-err');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'login-err';
+  el.style.cssText = 'background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.3);color:#fda4af;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;margin-top:8px;animation:fadeUp .3s ease';
+  el.innerHTML = '❌ ' + msg;
+  document.querySelector('.lc').insertBefore(el, document.getElementById('lbtn'));
 }
 function doLogout() {
   token = ''; currentUser = null;
@@ -855,17 +894,17 @@ function initApp() {
 // ── Auto-login: verify token with server first (handles server restarts)
 window.addEventListener('DOMContentLoaded', async () => {
   applyDark();
+  // Spawn login page particles
+  spawnParticles();
   if (token && currentUser) {
     try {
-      // Ping a protected endpoint to check if session is still valid
       await fetch('/api/summary', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(r => {
         if (r.status === 401) throw new Error('expired');
       });
-      initApp(); // token is valid — go to dashboard
+      initApp();
     } catch {
-      // Token invalid (server restarted) — clear and show login
       token = ''; currentUser = null;
       localStorage.removeItem('st_token');
       localStorage.removeItem('st_user');
@@ -875,3 +914,105 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('login-page').style.display = 'flex';
   }
 });
+
+// ══════════════════════════════════════════════
+// CLASSIC ANIMATIONS
+// ══════════════════════════════════════════════
+
+// 1. Floating particles on login background
+function spawnParticles() {
+  const pg = document.getElementById('login-page');
+  if (!pg) return;
+  let wrap = pg.querySelector('.particles');
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'particles'; pg.appendChild(wrap); }
+  const emojis = ['💰','💳','💵','₹','💸','⭐','💼','🏆'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.style.cssText = `position:absolute;font-size:${12+Math.random()*18}px;opacity:${0.08+Math.random()*0.18};`+
+      `left:${Math.random()*100}%;top:${Math.random()*100}%;`+
+      `animation:float ${4+Math.random()*6}s ease-in-out infinite;`+
+      `animation-delay:${Math.random()*4}s;pointer-events:none;`;
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    wrap.appendChild(p);
+  }
+}
+
+// 2. Animated number counter (counts up from 0)
+function animateCounter(el, target, prefix='', suffix='', duration=1200) {
+  if (!el) return;
+  const start = Date.now();
+  const isNeg = target < 0;
+  const abs = Math.abs(target);
+  function update() {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(abs * ease);
+    el.textContent = prefix + (isNeg ? '-' : '') +
+      new Intl.NumberFormat('en-IN').format(current) + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// 3. Stagger fade-in for lists of cards
+function staggerReveal(selector, delay=80) {
+  const els = document.querySelectorAll(selector);
+  els.forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = `opacity .45s ease, transform .45s ease`;
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, i * delay + 50);
+  });
+}
+
+// 4. Ripple effect on button clicks
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.classList.contains('no-ripple')) return;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const r = document.createElement('span');
+  r.style.cssText = `position:absolute;width:${size}px;height:${size}px;`+
+    `left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`+
+    `border-radius:50%;background:rgba(255,255,255,.25);`+
+    `animation:ripple .55s ease forwards;pointer-events:none;`;
+  if (getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+
+// 5. Run counters after dashboard loads
+const _origAfterRender = afterRender;
+function afterRender(pg) {
+  _origAfterRender(pg);
+  if (pg === 'dashboard') {
+    setTimeout(() => {
+      // Animate stat card values
+      document.querySelectorAll('.sc-val').forEach(el => {
+        const raw = el.textContent.replace(/[^\d.-]/g,'');
+        const num = parseFloat(raw);
+        if (!isNaN(num)) animateCounter(el, num, '₹', '', 1400);
+      });
+      // Stagger transaction rows
+      staggerReveal('.txrow', 60);
+      // Stagger stat cards
+      staggerReveal('.sc', 100);
+    }, 100);
+  }
+  if (pg === 'budget' || pg === 'goals') {
+    setTimeout(() => staggerReveal('.prow, .gcrd', 80), 100);
+  }
+  if (pg === 'accounts') {
+    setTimeout(() => staggerReveal('.ac', 100), 100);
+  }
+  if (pg === 'ai-chat') {
+    const msgs = document.getElementById('chatmsgs');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+}

@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── In-memory database (replace with MongoDB/PostgreSQL for production)
 let db = {
   users: [
-    { id: 'u1', name: 'Vsuja', email: 'vsuja@email.com', password: '1234', plan: 'Premium' }
+    { id: 'u1', name: 'Vsuja', email: 'vsuja@email.com', password: 'Vsuja@2026', plan: 'Premium' }
   ],
   transactions: [
     { id:'t1',  userId:'u1', cat:'Food',          desc:'Zomato Order',        amt:-450,   date:'2026-07-07', type:'expense', upi:true,  icon:'🍕', note:'' },
@@ -67,12 +67,17 @@ let db = {
 // Simple session tokens (use JWT in production)
 const sessions = {};
 
-// ── AUTH: Login
+// ── AUTH: Login (real password check)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
-  const user = db.users.find(u => u.email === email);
-  if (!user) return res.status(401).json({ error: 'User not found' });
-  // In demo, any password works. In production: bcrypt.compare(password, user.password)
+  if (!email || !password)
+    return res.status(400).json({ error: 'Email and password are required.' });
+  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user)
+    return res.status(401).json({ error: 'No account found with this email.' });
+  // Real password check (case-sensitive)
+  if (user.password !== password)
+    return res.status(401).json({ error: 'Incorrect password. Please try again.' });
   const token = uuidv4();
   sessions[token] = user.id;
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
